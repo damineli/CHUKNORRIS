@@ -246,7 +246,7 @@ out.pair.par <- list(
 #-------------------------------------------------------------------------------
 #--LOAD ALL SCRIPTS (AUTOMATIC)-------------------------------------------------
 #-------------------------------------------------------------------------------
-src.path <- paste(chuk.path, "CHUKNORRIS/R/src/", sep = "")
+src.path <- paste(chuk.path, "/R/src/", sep = "")
 all.scripts <- list.files(src.path, pattern = "[.]R$", recursive = TRUE)
 invisible(lapply(paste(src.path, all.scripts, sep = ""), source))
 #-------------------------------------------------------------------------------
