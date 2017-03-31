@@ -7,11 +7,11 @@
 #-------------------------------------------------------------------------------
 # Directories 
 ## Path to CHUKNORRIS - where did you save the folder with the scripts?
-chuk.path <- "~/Dropbox/"  # *** MUST SPECIFY! ***
+chuk.path <- getwd()
 ## Input folder - where is your data?
-in.path <- "~/Dropbox/CHUKNORRIS/data/kymo/"  # *** MUST SPECIFY! ***
+in.path <- paste(chuk.path, "/data/kymo/", sep="")
 ## Output folder - where do you want your data saved?
-out.path <- "~/Dropbox/CHUKNORRIS/out_exs/kymo/"  # *** MUST SPECIFY! ***
+out.path <- paste(chuk.path, "/out_exs/kymo/", sep="")
 # File to analyze
 ## The files MUST be kymographs in '.txt', a matrix with pixel intensities where
 ## Time increases through rows (from top to bottom) and Object length increases
@@ -260,7 +260,7 @@ out.par <- list(
 #-------------------------------------------------------------------------------
 #--LOAD ALL SCRIPTS (AUTOMATIC)-------------------------------------------------
 #-------------------------------------------------------------------------------
-src.path <- paste(chuk.path, "CHUKNORRIS/R/src/", sep = "")
+src.path <- paste(chuk.path, "/R/src/", sep = "")
 all.scripts <- list.files(src.path, pattern = "[.]R$", recursive = TRUE)
 invisible(lapply(paste(src.path, all.scripts, sep = ""), source))
 #-------------------------------------------------------------------------------
