@@ -132,7 +132,7 @@ GetPowerPeakRidges<-function(wvlt, pwr, filter.ridge = "signif",
     }
     
     if(do.summary){
-      ridges.summary <- SummarizeWvltRidge(ridges.dat)
+      ridges.summary <- SummarizeWvltRidge(ridges)
     } else{ridges.summary <- NULL}
     
   } else{ridges <- ridges.summary <- wave.sum <- NA} # change for NULL
