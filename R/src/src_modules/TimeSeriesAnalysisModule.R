@@ -34,25 +34,6 @@ AnalyzeTimeSeries <- function(dat, ts.par, filter.par, wvlt.par, out.par,
   dat.filt <- cbind(dat, 
                     FilterWithWavelet(dat[, 2], smth.vec = filter.par$smth.vec))
   colnames(dat.filt)[1:2] <- c("time", "raw")
-  
-  # Plot filtering results
-  if(out.par$do.plot){
-    plot(dat.filt[ ,1], dat.filt$raw, type="o", col = "grey", lwd = 1.5, 
-         xlab = paste("Time (", ts.par$time.unit, ")", sep = ""), 
-         ylab = out.par$ylab, main = "Filtering results")
-    lines(dat.filt[ ,1], dat.filt$trend, 
-          col = adjustcolor("black", alpha.f = 1))
-    lines(dat.filt[ ,1], dat.filt$smth, 
-           col = adjustcolor("red", alpha.f = 0.75))
-    legend("bottomleft", legend = c("Prefiltered", "Filtered", "Trend"), 
-           col = c("grey", "red","black"), bty = "n", lwd = 1, 
-           pch = c(1, -1 , -1))
-           
-    plot(dat.filt[ ,1], dat.filt$osc, type="l", col = "blue", lwd = 2,
-         xlab = paste("Time (", ts.par$time.unit, ")", sep = ""), 
-         ylab = out.par$ylab, main = "Filtered and detrended series")
-    
-    }
     
   # Get table with all summary statistics and Fourier transform peak
   summary.stats <- GetAllSummaryStats(dat.filt, var.nm, fl.nm)
@@ -65,6 +46,27 @@ AnalyzeTimeSeries <- function(dat, ts.par, filter.par, wvlt.par, out.par,
   }
   # Analyze oscillations with continuous wavelet and get results table
   osc.analysis <- AnalyzeOscillations(dat.filt, wvlt.par, var.nm, fl.nm)
+  
+  # Temporary plots
+  # Plot filtering results
+  if(out.par$do.plot){
+    plot(dat.filt[ ,1], dat.filt$raw, type="o", col = "grey", lwd = 1.5, 
+         xlab = paste("Time (", ts.par$time.unit, ")", sep = ""), 
+         ylab = out.par$ylab, main = "Filtering results")
+    lines(dat.filt[ ,1], dat.filt$trend, 
+          col = adjustcolor("black", alpha.f = 1))
+    lines(dat.filt[ ,1], dat.filt$smth, 
+          col = adjustcolor("red", alpha.f = 0.75))
+    legend("bottomleft", legend = c("Prefiltered", "Filtered", "Trend"), 
+           col = c("grey", "red","black"), bty = "n", lwd = 1, 
+           pch = c(1, -1 , -1))
+    
+    plot(dat.filt[ ,1], dat.filt$osc, type="l", col = "blue", lwd = 2,
+         xlab = paste("Time (", ts.par$time.unit, ")", sep = ""), 
+         ylab = out.par$ylab, main = "Filtered and detrended series")
+    
+  }
+  
   # Plot wavelet
   if(out.par$do.plot){
     plot(osc.analysis$cwt, type = "power.norm", 
