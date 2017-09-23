@@ -34,28 +34,65 @@ AnalyzeRatiometricKymograph <- function(k1, k2, tip.find.par, image.par, ts.par,
     summary.tbls <- AddIfNotNull(summary.tbls, ts.analysis[[var.nm]]$summary.stats.tbl)
   }
   if(out.par$do.plot){
+    ylm <- c(0, max(ratio.data$all.kymo.ts$tip.loc.smth * image.par$pixel.size) + 5)
     pdf(paste(out.par$out.path, "RatioKymo_", fl.nm, ".pdf", sep = ""), 
         width = 9, height = 6)
     par(mar = c(5, 4.5, 4, 4.5) + 0.1)
     
     # Strongest channel kymograph
     image.plot(x = time.vec, y = 1:dim(k2)[2] * image.par$pixel.size, z = k2, col = tim.colors(256),
-          xlab = paste("Time (", image.par$length.unit, ")"),
-          ylab = paste("Length (", image.par$length.unit, ")"),
+          xlab = paste("Time (", image.par$time.unit, ")", sep=""),
+          ylab = paste("Length (", image.par$length.unit, ")", sep=""), ylim = ylm,
           main = paste(var2.nm, " kymograph"))
     
     lines(ratio.data$all.kymo.ts$time, ratio.data$all.kymo.ts$tip.loc.smth * image.par$pixel.size, lwd = 1, col ="white", type="o",cex=0.3, pch = 19)
     legend("topleft","Tip location estimate", lwd = 1, col="white",text.col = "white", pch = 19, pt.cex = 0.5,bty="n")#box.col = "white",
 
+    # Weakest channel kymograph
+    image.plot(x = time.vec, y = 1:dim(k1)[2] * image.par$pixel.size, z = k1, col = tim.colors(256),
+               xlab = paste("Time (", image.par$time.unit, ")", sep=""), ylim = ylm,
+               ylab = paste("Length (", image.par$length.unit, ")", sep=""),
+               main = paste(var1.nm, " kymograph"))
+    
+    lines(ratio.data$all.kymo.ts$time, ratio.data$all.kymo.ts$tip.loc.smth * image.par$pixel.size, lwd = 1, col ="white", type="o",cex=0.3, pch = 19)
+    legend("topleft","Tip location estimate", lwd = 1, col="white",text.col = "white", pch = 19, pt.cex = 0.5,bty="n")#box.col = "white",
+    
     # Tip aligned kymograph
     tip.aligned <- ratio.data$ratio.kymo.lst$tip.aligned
     image.plot(x = time.vec, 
                y = image.par$tip.cut:dim(k2)[2] * image.par$pixel.size,
                z = tip.aligned[, image.par$tip.cut:dim(tip.aligned)[2]], 
-               col = tim.colors(256), 
-               xlab = paste("Time (", image.par$length.unit, ")"),
-               ylab = paste("Length (", image.par$length.unit, ")"),
+               col = tim.colors(256), ylim = ylm,
+               xlab = paste("Time (", image.par$time.unit, ")", sep=""),
+               ylab = paste("Length (", image.par$length.unit, ")", sep=""),
                main = "Ratiometric tip aligned kymograph")
+    ### With region
+    image.plot(x = time.vec, 
+               y = image.par$tip.cut:dim(k2)[2] * image.par$pixel.size,
+               z = tip.aligned[, image.par$tip.cut:dim(tip.aligned)[2]], 
+               col = tim.colors(256), ylim = ylm,
+               xlab = paste("Time (", image.par$time.unit, ")", sep=""),
+               ylab = paste("Length (", image.par$length.unit, ")", sep=""),
+               main = "Ratiometric tip aligned kymograph")
+    
+    rect(xleft = -1, 
+         ybottom = (image.par$tip.pixel - (image.par$avg.width / 2)) * image.par$pixel.size,
+         xright = max(time.vec)+1,
+         ytop = (image.par$tip.pixel + (image.par$avg.width / 2)) * image.par$pixel.size,
+         density = 10,
+         col = adjustcolor("black", alpha.f = 0.5)
+    )
+    text(x=max(time.vec)/2,y=(image.par$tip.pixel + (image.par$avg.width / 2)) * image.par$pixel.size + 3,"Tip",cex=1)
+    #0+2
+    rect(xleft = -1, 
+         ybottom = (image.par$shank.pixel - (image.par$avg.width / 2)) * image.par$pixel.size,
+         xright = max(time.vec)+1,
+         ytop = (image.par$shank.pixel + (image.par$avg.width / 2)) * image.par$pixel.size,
+         density = 10,
+         col = adjustcolor("black", alpha.f = 0.5)
+    )
+    text(x=max(time.vec)/2,y=(image.par$shank.pixel + (image.par$avg.width / 2)) * image.par$pixel.size + 3,"Shank",cex=1)
+    
     
     dev.off()
   }
@@ -159,11 +196,15 @@ GetRatiometricKymograph <- function(k1, k2, tip.loc,
   #                            and with the tip aligned to one side
   
   # Subtract background from channel 1 kymograph
-  # FUNCTION FROM: /src_kymo/'SubtractKymoBackground.R'
-  k1.minus.bckgd <- SubtractKymoBackground(k1, tip.loc, bckgd.qntl, tip.mrgn)
-  
-  # Subtract background from channel 2 kymograph
-  k2.minus.bckgd <- SubtractKymoBackground(k2, tip.loc, bckgd.qntl, tip.mrgn)
+  if(is.null(bckgd.qntl)){
+      k1.minus.bckgd <- k1
+      k2.minus.bckgd <- k2
+  } else{
+    # FUNCTION FROM: /src_kymo/'SubtractKymoBackground.R'
+    k1.minus.bckgd <- SubtractKymoBackground(k1, tip.loc, bckgd.qntl, tip.mrgn)
+    # Subtract background from channel 2 kymograph
+    k2.minus.bckgd <- SubtractKymoBackground(k2, tip.loc, bckgd.qntl, tip.mrgn)
+    }
   
   # Divide kymographs from both channels and clean matrix of NaNs and Infs
   # FUNCTION FROM: /src_kymo/'CleanKymo.R'

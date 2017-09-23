@@ -96,14 +96,16 @@ AnalyzeTimeSeriesSynchrony <- function(dat1, dat2, par.lst, wvlt.pair.par,
     } else{wvlt.coher.lst <- list("analysis" = NULL, "tbl" = NULL)}
   
   sync.tbl <- AddIfNotNull(cross.wvlt.lst$tbl, wvlt.coher.lst$tbl)
+    if(out.par$do.plot){dev.off()}
   
-  if(out.par$do.plot){dev.off()}
+  #colnames(sync.tbl) <- c(colnames(sync.tbl)[1:13],"wave",colnames(sync.tbl)[14:(length(colnames(sync.tbl))-1)])
   
   pair.analyses <- list("t1.lst" = t1.lst, "t2.lst" = t2.lst, 
                         "matched.series" = series.pair,
                         "sync.tbl" = sync.tbl,
                         "cross.wvlt" = cross.wvlt.lst$analysis,
-                        "wvlt.coher" = wvlt.coher.lst$analysis)
+                        "wvlt.coher" = wvlt.coher.lst$analysis,
+                        "pair.analyses" = cross.wvlt.lst)
   
   if(out.par$do.save.data){
     write.csv(sync.tbl, paste(out.par$out.path, "SyncTbl_", fl.nm, 

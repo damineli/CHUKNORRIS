@@ -5,11 +5,11 @@ FindFrequencyFourier <- function(ts, sf){
   ##############################################################################
   ## TODO: Calculate CI, get amplitude and phase (as wvlt?) extend to coherence
   ##############################################################################
-  
+  min.f <- 1 / ((length(ts) * (1 / sf)) / 2)
   frq.spec.pgram <- spec.pgram(ts, log="no", plot = FALSE, fast = FALSE)
   frq.spec.ar <- spec.ar(ts, log="no", plot = FALSE)  
-  spec.pks <- list("pgram" = FindFreqPeak(frq.spec.pgram, sf = sf),
-                   "ar" = FindFreqPeak(frq.spec.ar, sf = sf))
+  spec.pks <- list("pgram" = FindFreqPeak(frq.spec.pgram, sf = sf, min.f),
+                   "ar" = FindFreqPeak(frq.spec.ar, sf = sf, min.f))
   
   spec.info <- list("spec.pgram" = frq.spec.pgram,
                     "spec.ar" = frq.spec.pgram, "spec.pks" = spec.pks)
@@ -17,11 +17,16 @@ FindFrequencyFourier <- function(ts, sf){
   return(spec.info)
 }
 #-------------------------------------------------------------------------------
-FindFreqPeak <- function(frq.spec, sf){
+FindFreqPeak <- function(frq.spec, sf, min.f = 0){
   ##############################################################################
   ## TODO: Better peak finding algorithm (interpolation)
   ##############################################################################
-  frq.pk <- frq.spec$freq[which.max(frq.spec$spec)] * sf
+  spec.frq <- frq.spec$freq * sf
+  spec.pwr <- frq.spec$spec
+  spec.pwr[spec.frq < min.f] <- NA
+  
+  frq.pk <- spec.frq[which.max(spec.pwr)]
+  if(length(frq.pk) == 0){frq.pk <- NA}
   #abline(h=log2(1/(tst$freq[which.max(tst$spec)]*(1/(4/60)))))
   #per.pk <- (1 / frq.pk) / 60 # Period in minutes
   #spec.pks = c("frq" = frq.pk, "per" = per.pk)

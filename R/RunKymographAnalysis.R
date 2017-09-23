@@ -53,7 +53,7 @@ image.par <- list(
   tip.pixel = 10, # integer
   # Number of pixels to measure Shank fluorescence counting from
   # the tip estimate
-  shank.pixel = 90, # integer
+  shank.pixel = 70, # integer
   # Number of pixels to extract fluorescence signal by averaging
   # distributed symetrically around the tip and shank region
   avg.width = 5, # integer, usually and odd number
@@ -68,23 +68,31 @@ tip.find.par <- list(
   # Use smoothed fluoresce series to perform fit?
   use.smooth = TRUE,  # TRUE or FALSE
   # Number of points in the local fit to smooth kymograph
-  kymo.span.n = 7,  # integer ~3:21 (e.g. 7, 9)
+  kymo.span.n = 11,  # integer ~3:21 (e.g. 7, 9)
   # Degree of the polynomial used to smooth the kymograph
-  kymo.loess.dg = 2,  # integer 1, 2 (best 2)
+  kymo.loess.dg = 1,  # integer 1, 2 (best 2)
   # Number of points used in the linear model to find the tip
-  tip.find.n = 9,   # integer 5:11 (e.g. 7, 9, 11)
+  tip.find.n = 5,   # integer 5:11 (e.g. 7, 9, 11)
   # Minumum number of points to consider a fluorescence 
   # change (increase from right to left) chunk
-  fluo.chunk.n = 9,   # integer 7:11 (e.g. 7, 9, 11)
+  fluo.chunk.n = 5,   # integer 7:11 (e.g. 7, 9, 11)
   # Fraction of the fluorescence signal that must be reached
   # withing the fluorescence chunk
   fluo.thrsh.frac = 0.4,  #~0.1:0.75 (e.g. 0.4, 0.6)
   # Number of points in the smoothing the tip location series
-  tip.span.n = 11,  # integer ~ 3:21 (e.g. 7, 9, 11)
+  tip.span.n = 9,  # integer ~ 3:21 (e.g. 7, 9, 11)
   # Degree of the polynomial used in tip location smoothing
   tip.loess.dg = 2,   # integer 1,2
   # Use smoothed tip series to align kymograph?
-  use.tip.smth = TRUE
+  use.tip.smth = TRUE,
+  # Reduce effects of high fluorescence variability on growth estimates
+  fix.slope = TRUE,
+  # Remove outliers usually cause by abnormal capture in a single time frame
+  rm.tip.out = TRUE,
+  # Smoothing span of the reference to define outlier
+  rm.tip.out.spn = 0.2,
+   # Smoothing degree of the reference to define outlier
+  rm.tip.out.dg = 1
 )
 
 # Time series parameters
@@ -109,7 +117,7 @@ ts.par <- list(
   # Perform a coarser smoothing after interpolation?
   coarse.smth = TRUE,  # TRUE or FALSE
   # Number of points in the local fit to smooth the series
-  coarse.n = 15,  # integer usually around 5-20
+  coarse.n = 11,  # integer usually around 5-20
   # Perform smoothing on an integrated version of the series?
   coarse.integrate = TRUE,  # TRUE or FALSE
   # Perform smoothing shifting all values to the positive range?
@@ -126,7 +134,14 @@ filter.par <- list(
   # wavelet tranform. Leave it NULL if you are clueless
   smth.vec = NULL,  # NULL or a vector with TRUE or FALSE as c(T, T, T, T, F, F)
   # Type of filtering to perform in a Single Channel Kymograph
-  filter.type = "Filter2DWavelet"  # either NULL or "Filter2DWavelet"
+  filter.type = "Filter2DWavelet",  # either NULL or "Filter2DWavelet"
+  filter.type = NULL,  # either NULL or "Filter2DWavelet"
+  # Use loess to remove trend
+  loess.first = TRUE,
+  # Smoothing span of the trend 
+  loess.spn = 0.2,#0.4
+   # Smoothing degree of the trend
+  loess.degree = 1#0.2
 )
 
 # Wavelet parameters

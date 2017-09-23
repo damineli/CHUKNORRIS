@@ -47,8 +47,12 @@ GetJointWaveletTable <- function(ts1, ts2, var1.nm = "var1", var2.nm = "var2",
   }
   rownames(dat.all) <- row.names(max.ridges)
   tbl.1 <- cbind(dat.all, max.ridges)
+  #print(colnames(tbl.1))
   tbl.1.nms <- c("time", "var1", "var2", "per", "phs", "amp", "env", "sig", "pwr", "delay")
-  
+  #print(length(tbl.1.nms))
+  #if(length(colnames(tbl.1)) < length(colnames(tbl.1.nms))){
+  #  tbl.1 <- cbind(tbl.1, rep(NA, dim(tbl.1)[1]))
+  #}
   null.col <- rep(NA, dim(pwr.pks$per)[1])
   prev.lines <- null.col
   pwr.pks.col.nms <- c()

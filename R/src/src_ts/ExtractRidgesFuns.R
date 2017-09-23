@@ -1,32 +1,165 @@
+# #-------------------------------------------------------------------------------
+# ExtractRidges <- function(wvlt, filter.ridge = "coi", do.summary = FALSE){
+#   #TODO: RE-implement summary 
+#   #According to biwavelet plotting function
+#   if (wvlt$type == "xwt") {
+#     zvals <- log2(wvlt$power) / (wvlt$d1.sigma * wvlt$d2.sigma)
+#     get.delay <- TRUE
+#   } else if (wvlt$type == "wtc" | wvlt$type == "pwtc") {
+#     zvals <- wvlt$rsq
+#     wvlt$signif <- wvlt$rsq/wvlt$signif
+#     get.delay <- TRUE
+#   } else {
+#     zvals <- log2(abs(wvlt$power/wvlt$sigma2))
+#     get.delay <- FALSE
+#   }
+#   
+#   # Single peak corresponding to max power
+#   ridge.max <- GetRidges(wvlt, pwr = zvals, filter.ridge = filter.ridge, 
+#                                           get.delay = get.delay, do.summary = do.summary, ridge.type = "max")
+#   #GetMaxPowerRidges(wvlt, pwr = zvals, filter.ridge = filter.ridge, 
+#                         #         get.delay = get.delay, do.summary = do.summary)
+#   # Multiple power peaks filtered by significance:"signif" coi:"coi" or none:""
+#   ridge.pwr.pks <-  GetRidges(wvlt, pwr = zvals, filter.ridge = filter.ridge, 
+#                               get.delay = get.delay, do.summary = do.summary, ridge.type = "pwr.pks")
+#   
+#   ridges <- list("max" = ridge.max, "pwr.pks" = ridge.pwr.pks)
+#   return(ridges)
+# }
+# #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-ExtractRidges <- function(wvlt, filter.ridge = "coi", do.summary = FALSE){
+ExtractRidges <- function(wvlt, filter.ridge = "coi", do.summary = FALSE, type = "power.corr"){
   #TODO: RE-implement summary 
   #According to biwavelet plotting function
+  wvlt$power <- wvlt$power.corr
   if (wvlt$type == "xwt") {
-    zvals <- log2(wvlt$power) / (wvlt$d1.sigma * wvlt$d2.sigma)
+    zvals <- wvlt$power#log2(wvlt$power) / (wvlt$d1.sigma * wvlt$d2.sigma)
     get.delay <- TRUE
   } else if (wvlt$type == "wtc" | wvlt$type == "pwtc") {
-    zvals <- wvlt$rsq
+    zvals <- wvlt$power
     wvlt$signif <- wvlt$rsq/wvlt$signif
     get.delay <- TRUE
   } else {
-    zvals <- log2(abs(wvlt$power/wvlt$sigma2))
+    zvals <- wvlt$power#log2(abs(wvlt$power/wvlt$sigma2))
     get.delay <- FALSE
   }
   
   # Single peak corresponding to max power
-  ridge.max <- GetMaxPowerRidges(wvlt, pwr = zvals, filter.ridge = filter.ridge, 
-                                 get.delay = get.delay, do.summary = do.summary)
+  ridge.max <- GetRidges(wvlt, pwr = zvals, filter.ridge = filter.ridge, 
+                         get.delay = get.delay, do.summary = do.summary, ridge.type = "max")
+  #GetMaxPowerRidges(wvlt, pwr = zvals, filter.ridge = filter.ridge, 
+  #         get.delay = get.delay, do.summary = do.summary)
   # Multiple power peaks filtered by significance:"signif" coi:"coi" or none:""
-  ridge.pwr.pks <- GetPowerPeakRidges(wvlt, pwr = zvals, 
-                                      filter.ridge = filter.ridge, 
-                                      get.delay = get.delay,
-                                      do.summary = do.summary)
+  ridge.pwr.pks <-  GetRidges(wvlt, pwr = zvals, filter.ridge = filter.ridge, 
+                              get.delay = get.delay, do.summary = do.summary, ridge.type = "pwr.pks")
   
   ridges <- list("max" = ridge.max, "pwr.pks" = ridge.pwr.pks)
   return(ridges)
 }
 #-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+GetRidges <- function(wvlt, pwr, filter.ridge = "signif", 
+                      get.delay = TRUE, do.summary = FALSE, ridge.type = "max"){
+  #filter.ridge.opts = c("signif","coi","")
+  
+  t.points <- seq(dim(pwr)[2])
+  
+  if(filter.ridge == "coi"){
+    pks.indx.list <- sapply(t.points, FindSigRidgePeaksOutCOI, wvlt = wvlt,
+                            pwr = pwr)
+  } else if(filter.ridge == "signif"){
+    pks.indx.list <- sapply(t.points, FindSigRidgePeaks, wvlt = wvlt, pwr = pwr)
+  } else{
+    pks.indx.list <- sapply(t.points, FindRidgePeaks, wvlt = wvlt, pwr = pwr)
+  }
+  
+  max.lngth <- max(unlist(lapply(pks.indx.list, length)))
+  
+  if(max.lngth != 0){
+    #Sort by power!
+    l <- lapply(pks.indx.list, FillWithNA, max.lngth = max.lngth)
+    
+    df.pk.indxs <- data.frame(matrix(unlist(l), nrow=(dim(pwr)[2]), byrow=T))
+    
+    per.tbl <- apply(df.pk.indxs, 2, GetWvltPerLine, per = wvlt$period)
+    phs.tbl <- apply(df.pk.indxs, 2, GetWvltPerLine, per = wvlt$phase) #to calculate delays after
+    
+    wave.tbl <- apply(df.pk.indxs, 2, GetWvltValsLine, tbl = wvlt$wave)
+    wave.sum <- apply(wave.tbl, 1, sum, na.rm = T)
+    
+    phs.rdg <- Arg(wave.sum)
+    amp.rdg <- Re(wave.sum)
+    env.rdg <- Mod(wave.sum) #actual amplitude
+    
+    sig.tbl <- apply(df.pk.indxs, 2, GetWvltValsLine, tbl = wvlt$signif)
+    pwr.tbl <- apply(df.pk.indxs, 2, GetWvltValsLine, tbl = pwr)
+    
+    ridges <- list("indxs" = df.pk.indxs, "per" = per.tbl, "phs.vec" = phs.rdg, 
+                   "phs" = phs.tbl, "amp" = amp.rdg, "env" = env.rdg,
+                   "sig" = sig.tbl, "pwr" = pwr.tbl, "wave" = wave.tbl)
+    
+    if(get.delay){
+      delay.tbl <- per.tbl * (phs.tbl / (2 * pi))
+      ridges <- c(ridges, delay = list(delay.tbl))
+    }
+    
+    if(ridge.type == "max"){
+      empty.vec <- rep(NA, dim(pwr.tbl)[1])
+      max.pwr <- apply(pwr.tbl, 1, which.max)
+      ridge.indx <- which(unlist(lapply(max.pwr, length)) > 0)
+      empty.vec[ridge.indx] <- unlist(max.pwr[ridge.indx])
+      
+      per.rdg <- c()
+      phs.rdg <- c() 
+      sig.rdg <- c()
+      pwr.rdg <- c()
+      wave.rdg <- c()
+      
+      for(i in 1:length(empty.vec)){
+        if(!is.na(empty.vec[i])){
+          per.rdg <- c(per.rdg, ridges$per[i, empty.vec[i]])
+          phs.rdg <- c(phs.rdg, ridges$phs[i, empty.vec[i]]) 
+          sig.rdg <- c(sig.rdg, ridges$sig[i, empty.vec[i]])
+          pwr.rdg <- c(pwr.rdg, ridges$pwr[i, empty.vec[i]])
+          wave.rdg <- c(wave.rdg, ridges$wave[i, empty.vec[i]])
+          
+        } else{
+          per.rdg <- c(per.rdg, NA)
+          phs.rdg <- c(phs.rdg, NA) 
+          sig.rdg <- c(sig.rdg, NA)
+          pwr.rdg <- c(pwr.rdg, NA)
+          wave.rdg <- c(wave.rdg, NA)
+        }
+      }
+      amp.rdg <- Re(wave.rdg)
+      env.rdg <- Mod(wave.rdg)
+      wave.sum <- wave.rdg
+      ridges <- cbind.data.frame("per" = per.rdg, "phs" = phs.rdg, 
+                                 "amp" = amp.rdg, "env" = env.rdg, 
+                                 "sig" = sig.rdg, "pwr" = pwr.rdg)#,
+                                 #"wave" = wave.rdg)
+      if(get.delay){
+        delay.rdg <- per.rdg * (phs.rdg / (2 * pi))
+        ridges <- cbind.data.frame(ridges, delay = delay.rdg)
+      }
+      
+    }
+    
+    if(do.summary){
+      ridges.summary <- SummarizeWvltRidge(ridges)
+    } else{ridges.summary <- NULL}
+    
+  } else{ridges <- ridges.summary <- wave.sum <- NA} # change for NULL
+  
+  #Dirty fix
+  if(ridge.type == "pwr.pks"){
+    ridges <- ridges[-which(names(ridges) == "wave")]
+  }
+  
+  return(list("ridges" = ridges, "wave" = wave.sum, "summary" = ridges.summary))
+}
+#-------------------------------------------------------------------------------
+
 GetMaxPowerRidges <- function(wvlt, pwr, p = 1, filter.ridge = "signif", 
                               get.delay = FALSE, do.summary = FALSE){
   
@@ -118,6 +251,9 @@ GetPowerPeakRidges<-function(wvlt, pwr, filter.ridge = "signif",
     phs.rdg <- Arg(wave.sum)
     amp.rdg <- Re(wave.sum)
     env.rdg <- Mod(wave.sum) #actual amplitude
+    
+    amp.tbl <- Re(wave.tbl)
+    env.tbl <- Mod(wave.tbl)
     
     sig.tbl <- apply(df.pk.indxs, 2, GetWvltValsLine, tbl = wvlt$signif)
     pwr.tbl <- apply(df.pk.indxs, 2, GetWvltValsLine, tbl = pwr)

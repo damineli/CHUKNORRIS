@@ -26,15 +26,43 @@ AnalyzeTimeSeries <- function(dat, ts.par, filter.par, wvlt.par, out.par,
   # If frequency bands where not selected, calculate given specified intervals
   if(is.null(filter.par$smth.vec)){
     filter.par$smth.vec <- GetSmoothVec(sampling.freq,
-                                    series.length = dim(dat)[1] * time.step,
-                                    low.per = filter.par$low.per, 
-                                    high.per = filter.par$high.per)
+                                        series.length = dim(dat)[1] * time.step,
+                                        low.per = filter.par$low.per, 
+                                        high.per = filter.par$high.per)
   }
-  # Filter with a discrete wavelet transform and join all time series data  
-  dat.filt <- cbind(dat, 
-                    FilterWithWavelet(dat[, 2], smth.vec = filter.par$smth.vec))
-  colnames(dat.filt)[1:2] <- c("time", "raw")
+  
+  
+  # Filter with loess first
+  if(is.null(filter.par$loess.first)){filter.par$loess.first <- FALSE}
+  if(filter.par$loess.first){
+    trnd <- SmoothWithLoess(dat[, 2], spn = filter.par$loess.spn, 
+                            degree = filter.par$loess.degree)
+    dat.filt <- cbind(dat, 
+                      FilterWithWavelet(dat[, 2] - trnd, 
+                                        smth.vec = filter.par$smth.vec))
+    colnames(dat.filt)[1:2] <- c("time", "raw")
+    dat.filt$trend <- dat.filt$trend + trnd
+    dat.filt$smth <- dat.filt$smth + trnd
     
+  } else{
+    # Filter with Wavelet or skip
+    if(length(filter.par$smth.vec) == 1){
+      if(filter.par$smth.vec == "skip"){
+        trnd <- SmoothWithLoess(dat[, 2], spn = 0.4, degree = 1)
+        dat.filt <- cbind(dat, cbind.data.frame("smth" = dat[, 2], 
+                                                "osc" = dat[, 2] - trnd, 
+                                                "trend" = trnd))
+        colnames(dat.filt)[1:2] <- c("time", "raw")
+      }
+    } else{
+      # Filter with a discrete wavelet transform and join all time series data  
+      dat.filt <- cbind(dat, 
+                        FilterWithWavelet(dat[, 2], smth.vec = filter.par$smth.vec))
+      colnames(dat.filt)[1:2] <- c("time", "raw")
+    }
+    
+  }
+   
   # Get table with all summary statistics and Fourier transform peak
   summary.stats <- GetAllSummaryStats(dat.filt, var.nm, fl.nm)
   if(ts.par$time.unit == "min"){
@@ -69,10 +97,12 @@ AnalyzeTimeSeries <- function(dat, ts.par, filter.par, wvlt.par, out.par,
   
   # Plot wavelet
   if(out.par$do.plot){
-    plot(osc.analysis$cwt, type = "power.norm", 
+    wvlt.pal <- colorRampPalette(tim.colors(256), bias = 0.6)
+    plot(osc.analysis$cwt, type = "power.corr.norm", 
          main = "Continuous Wavelet Transform",  
          xlab = paste("Time (", ts.par$time.unit, ")", sep = ""),  
-         ylab = paste("Period (", ts.par$time.unit, ")", sep = ""))
+         ylab = paste("Period (", ts.par$time.unit, ")", sep = ""),
+         fill.cols = wvlt.pal(512))
     for(i in 1:dim(osc.analysis$ridges$pwr.pks$ridges$per)[2]){
       points(dat.filt[, 1], log2(osc.analysis$ridges$pwr.pks$ridges$per[, i]), 
              col = "white", pch = 19, cex = 0.5)
@@ -82,7 +112,23 @@ AnalyzeTimeSeries <- function(dat, ts.par, filter.par, wvlt.par, out.par,
     legend("bottomleft", c("Power peaks (ridges)", "Fourier peak"),
            pch = 19, pt.cex = c(0.5, 0), col = "white", lty = "dotdash", 
            lwd = c(-1,2), text.col = "white")
-      }
+  }
+  
+ if(wvlt.par$do.summary){
+ 	  # GMM
+ 	  if(!is.null(osc.analysis$ridges$max$ridges) & (length(osc.analysis$ridges$max$ridges) != 1)){
+ 	  	gmm.max <- SummarizeWvltRidge(osc.analysis$ridges$max$ridges)
+ 	  	gmm.pwr.pks <- SummarizeWvltRidge(osc.analysis$ridges$pwr.pks$ridges)
+ 	  	if(!is.null(gmm.max$per$gmm$mu)){
+ 	  		PlotGMM(gmm.max$per$gmm, obs = c(osc.analysis$ridges$max$ridges$per), 
+ 	  		xlb = "Period (min)", ttl = paste(var.nm, "max ridge"), cte = 1.75)
+ 	  		}
+ 	  		if(!is.null(gmm.pwr.pks$per$gmm$mu)){
+ 	  			PlotGMM(gmm.pwr.pks$per$gmm, obs = c(osc.analysis$ridges$pwr.pks$ridges$per), 
+ 	  			xlb = "Period (min)", ttl = paste(var.nm, "all ridges"), cte = 1.75)
+ 	  			}
+ 	  		}
+ 	  	}
 
   # Close plotting device
   if(out.par$do.plot){

@@ -31,14 +31,16 @@ AnalyzeKymograph <- function(kymo, tip.find.par, image.par, ts.par, filter.par,
   }
   
   if(out.par$do.plot){
+    ylm <- c(0, max(kymo.data$all.kymo.ts$tip.loc.smth * image.par$pixel.size) + 5)
     pdf(paste(out.par$out.path, "Kymo_", fl.nm, ".pdf", sep = ""), 
         width = 9, height = 6)
     par(mar = c(5, 4.5, 4, 4.5) + 0.1)
     
     # Original kymograph
     image.plot(x = time.vec, y = 1:dim(kymo)[2] * image.par$pixel.size, z = kymo, col = tim.colors(256),
-               xlab = paste("Time (", image.par$length.unit, ")"),
-               ylab = paste("Length (", image.par$length.unit, ")"),
+               ylim = ylm,
+               xlab = paste("Time (", image.par$time.unit, ")",sep = ""),
+               ylab = paste("Length (", image.par$length.unit, ")",sep = ""),
                main = paste(fluo.var.nm, " kymograph"))
     
     lines(kymo.data$all.kymo.ts$time, kymo.data$all.kymo.ts$tip.loc.smth * image.par$pixel.size, lwd = 1, col ="white", type="o",cex=0.3, pch = 19)
@@ -51,10 +53,37 @@ AnalyzeKymograph <- function(kymo, tip.find.par, image.par, ts.par, filter.par,
     image.plot(x = time.vec[-cut.time], 
                y = 1:dim(tip.aligned)[2] * image.par$pixel.size,
                z = tip.aligned[-cut.time, ], 
-               col = tim.colors(256), 
-               xlab = paste("Time (", image.par$length.unit, ")"),
-               ylab = paste("Length (", image.par$length.unit, ")"),
+               col = tim.colors(256), ylim = ylm,
+               xlab = paste("Time (", image.par$time.unit, ")",sep = ""),
+               ylab = paste("Length (", image.par$length.unit, ")",sep = ""),
                main = "Filtered tip aligned kymograph")
+    
+    # Tip aligned kymograph WITH ROIs
+    image.plot(x = time.vec[-cut.time], 
+               y = 1:dim(tip.aligned)[2] * image.par$pixel.size,
+               z = tip.aligned[-cut.time, ], 
+               col = tim.colors(256), ylim = ylm,
+               xlab = paste("Time (", image.par$time.unit, ")",sep = ""),
+               ylab = paste("Length (", image.par$length.unit, ")",sep = ""),
+               main = "Filtered tip aligned kymograph")
+    
+    rect(xleft = -1, 
+         ybottom = (image.par$tip.pixel - (image.par$avg.width / 2)) * image.par$pixel.size,
+         xright = max(time.vec)+1,
+         ytop = (image.par$tip.pixel + (image.par$avg.width / 2)) * image.par$pixel.size,
+         density = 10,
+         col = adjustcolor("black", alpha.f = 0.5)
+    )
+    text(x= max(time.vec)/2, y=(image.par$tip.pixel + (image.par$avg.width / 2)) * image.par$pixel.size + 3,"Tip",cex=1)
+    #0+0.5
+    rect(xleft = -1, 
+         ybottom = (image.par$shank.pixel - (image.par$avg.width / 2)) * image.par$pixel.size,
+         xright = max(time.vec)+1,
+         ytop = (image.par$shank.pixel + (image.par$avg.width / 2)) * image.par$pixel.size,
+         density = 10,
+         col = adjustcolor("black", alpha.f = 0.5)
+    )
+    text(x=max(time.vec)/2,y=(image.par$shank.pixel + (image.par$avg.width / 2)) * image.par$pixel.size + 3,"Shank",cex=1)
     
     dev.off()
   }
@@ -95,7 +124,11 @@ GetDataFromKymo <- function(kymo, tip.find.par, image.par, filter.par){
                                     series.length = length(time.vec) * time.step,
                                     low.per = filter.par$low.per, 
                                     high.per = filter.par$high.per)
-  }
+  } else if(filter.par$smth.vec == "skip"){ 
+    filter.par$smth.vec <- GetSmoothVec(sampling.freq,
+                                        series.length = length(time.vec) * time.step,
+                                        low.per = filter.par$low.per,
+                                        high.per = filter.par$high.per)}
   
   # Calculate tip location and growth rate
   # FUNCTION FROM: 'TipDetectionModule.R'

@@ -64,7 +64,9 @@ image.par <- list(
                   # distributed symetrically around the tip and shank region
                   avg.width = 5, # integer, usually and odd number
                   # Number of pixels to cut from the tip for plotting purposes
-                  tip.cut = 3 # integer < 5 to avoid problems with color scale
+                  tip.cut = 3, # integer < 5 to avoid problems with color scale
+                  # Number of time points to cut from for plotting purposes,   
+  				        time.cut = 0 # integer < 5 to avoid problems with color scale
                   )
 
 # Tip-finding parameters
@@ -88,8 +90,17 @@ tip.find.par <- list(
                      # Degree of the polynomial used in tip location smoothing
                      tip.loess.dg = 2,   # integer 1,2
                      # Use smoothed tip series to align kymograph?
-                     use.tip.smth = TRUE
-                     )
+                     use.tip.smth = TRUE,  
+                     # Reduce effects of high fluorescence variability on growth estimate
+                     fix.slope = TRUE,
+                     # Remove outliers usually cause by abnormal capture in a single time frame
+                     rm.tip.out = TRUE,
+                     # Smoothing span of the reference to define outlier
+                     rm.tip.out.spn = 0.1,
+                     # Smoothing degree of the reference to define outlier
+                     rm.tip.out.dg = 1
+)
+                     
 
 # Time series parameters
 ts.par <- list(
@@ -128,7 +139,15 @@ filter.par <- list(
   high.per = 2,  # in the same time units as data
   # Vector of components to include or exclude in the discrete
   # wavelet tranform. Leave it NULL if you are clueless
-  smth.vec = NULL # NULL or a vector with TRUE or FALSE as c(T, T, T, T, F, F)
+  smth.vec = NULL, # NULL or a vector with TRUE or FALSE as c(T, T, T, T, F, F)
+    # Type of filtering to perform in a Single Channel Kymograph
+  filter.type = NULL,  # either NULL or "Filter2DWavelet"
+  # Use loess to remove trend
+  loess.first = TRUE,
+  # Smoothing span of the trend 
+  loess.spn = 0.25,#0.4
+   # Smoothing degree of the trend
+  loess.degree = 1#0.2
 )
 
 # Wavelet parameters

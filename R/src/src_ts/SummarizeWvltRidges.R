@@ -12,7 +12,7 @@ SummarizeWvltRidge <- function(ridges){
   wts.env <- sig.vec[1:length(env.vec)] / sum(sig.vec[1:length(env.vec)])
   
   per.dstr <- FitDistr(obs = per.vec, wts = wts)
-  phs.dstr <- FitDistr(obs = phs.vec, wts = wts, fit.gmm = FALSE)
+  phs.dstr <- FitDistr(obs = phs.vec, wts = wts, fit.gmm = TRUE)
   amp.dstr <- FitDistr(obs = env.vec, wts = wts.env)
   
   wvlt.rdg.dstrbs <- list("per" = per.dstr, "phs" = phs.dstr, "amp" = amp.dstr)
@@ -26,7 +26,7 @@ SummarizeWvltRidge <- function(ridges){
   return(wvlt.rdg.dstrbs)
 }
 #-------------------------------------------------------------------------------
-FitDistr <- function(obs, wts, adjst = 1, max.pks = 4, min.pk.d = 0.01, 
+FitDistr <- function(obs, wts, adjst = 1, max.pks = 8, min.pk.d = 0.01, 
                      min.obs = 5, fit.gmm = TRUE){
   if(length(obs) > min.obs){
     # Fit a weighted density curve
@@ -42,8 +42,10 @@ FitDistr <- function(obs, wts, adjst = 1, max.pks = 4, min.pk.d = 0.01,
     # Require package 'mixtools'
     # Later sort mus by lambda!
     if(fit.gmm & (!any(is.na(d.pks.gmm)))){
-      obs.gmm <- RobustGMM(obs, mu = d.pks.gmm)
-      obs.gmm.auto <- RobustGMM(obs)
+      obs.gmm <- invisible(RobustGMM(obs, mu = d.pks.gmm))#, lambda = obs.d$y[d.pks.gmm]/sum(obs.d$y[d.pks.gmm]))
+      #plot(obs.gmm, which = 2)
+      obs.gmm.auto <-invisible(RobustGMM(obs))
+      #plot(obs.gmm.auto, which = 2)
     } else{obs.gmm <- obs.gmm.auto <- NULL}
     
   } else{obs.d <- d.pks <- obs.gmm <- obs.gmm.auto <- NULL}

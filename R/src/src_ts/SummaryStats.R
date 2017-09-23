@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 GetAllSummaryStats <- function(dat, var.nm = "", fl.nm = "", dg = 6){
   # Get time step
-  time.step <- GetSamplingIntervalMode(dat[, 1], dg = dg)
+  time.step <- GetSamplingIntervalMode(dat[, 1], dg)
   # Calculate sampling frequency
   sampling.freq <- 1 / time.step
   # Analyze all time series
@@ -9,8 +9,8 @@ GetAllSummaryStats <- function(dat, var.nm = "", fl.nm = "", dg = 6){
   summary.tbl <- c()
   
   for(ts.nm in ts.nms){
-    summary.stats <- DoSummaryStats(dat[ts.nm][, 1])
-    spec.pks <- FindFrequencyFourier(dat[ts.nm][, 1], 
+    summary.stats <- DoSummaryStats(dat[, ts.nm])
+    spec.pks <- FindFrequencyFourier(dat[, ts.nm], 
                                      sf = sampling.freq)$spec.pks
     tbl <- GetStatsSummaryTable(summary.stats, spec.pks, ts.nm = ts.nm, 
                                 var.nm = var.nm, fl.nm = fl.nm)

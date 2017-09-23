@@ -78,8 +78,14 @@ filter1.par <- list(
   high.per = 2,  # in the same time units as data
   # Vector of components to include or exclude in the discrete
   # wavelet tranform. Leave it NULL if you are clueless
-  smth.vec = c(F, T, T, T, F, F)  # NULL or 
+  smth.vec = c(F, T, T, T, F, F),  # NULL or 
   # a vector with TRUE or FALSE
+   # Use loess to remove trend
+  loess.first = FALSE,
+  # Smoothing span of the trend 
+  loess.spn = 0.25,#0.4
+   # Smoothing degree of the trend
+  loess.degree = 1#0.2
 )
 
 # Filter parameters for series 2
